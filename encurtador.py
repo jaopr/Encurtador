@@ -13,3 +13,9 @@ class URL(db.model): # Classe que herda o model do SQLAlchemy
     original_url = db.Column(db.String(500), nullable = False) # Recebe a URL original, com capacidade em até 500 caracteres. a opção nullable = false não permite salvar a aplicação no BD enquanto essa parte estiver em branco
     short_url = db.Column(db.String(10), unique = True, nullable = False) # Armazena a URL reduzida, com até 10 caracteres, com a função unique = true impedindo a duplicação de URLs
 
+def generate_short_url(): #definindo a função que encurta as URLs
+    characters = string.ascii_letters + string.digits # Criando um string com letras maiúsculas e minusculas e com digitos de 0 a 9
+    while True: # Fica tentando criar uma URL única até conseguir
+        short_url = ''.join(random.choice(characters) for _ in range(10)) # Cria um string aleatória de 10 Caracteres
+        if not URL.query.filter_by(short_url=short_url).first(): #Verifica se a URL é única
+            return short_url
