@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect
+from flask import Flask, request, redirect, render_template_string
 from flask_sqlalchemy import SQLAlchemy
 import string, random
 
@@ -6,6 +6,8 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///urls.db'  # Usando o banco de dados urls do SQLite, especificado pelo URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Esse False evita que o SQLAlchemy envie notificações para o app Flask, otimizando o código
 db = SQLAlchemy(app)
+
+linkbase = 'http://127.0.0.1:5000/'
 
 # Criando a classe URL
 class URL(db.Model):  # Classe que herda o model do SQLAlchemy
@@ -20,6 +22,16 @@ def generate_short_url():  # Definindo a função que encurta as URLs
         if not URL.query.filter_by(short_url=short_url).first():  # Verifica se a URL é única
             return short_url
 
+@app.route('/')
+def index():
+    return '''
+    <form action="/shorten" method="post">
+        <label for="url">Insira a URL para ser encurtada:</label><br>
+        <input type="text" id="url" name="original_url" required><br>
+        <button type="submit">Encurtar</button>
+    </form>
+    '''
+
 @app.route('/<short_url>')  # Criando uma rota do Flask utilizando a função short_url
 def redirect_to_url(short_url):  # A função é chamada quando alguém acessa a rota
     url = URL.query.filter_by(short_url=short_url).first_or_404()  # Inicia uma consulta na tabela URL, filtra os resultados do campo short_url e executa a consulta, retornando ou o primeiro resultado encontrado ou o erro 404
@@ -32,12 +44,15 @@ def shorten_url():
     new_url = URL(original_url=original_url, short_url=short_url)  # Cria um novo objeto URL. A original_url é recebida no formulário e o short_url gera uma nova e aleatória.
     db.session.add(new_url)  # Prepara a inserção do objeto no BD
     db.session.commit()  # Commita a alteração
-    return f'Shortened URL is: {short_url}'  # Retorna a URL gerada
+    return f'Sua URL encurtada: <a href="{request.host_url}{short_url}">{request.host_url}{short_url}</a>'
+
 
 if __name__ == '__main__': # Verifica o script principal
     with app.app_context():
         db.create_all() # Cria todas as tabelas definidas
     app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
 
 # Código para inserir a url e receber ela reduzida
-# curl.exe -X POST -d "original_url=sua url" http://127.0.0.1:5000/shorten
+# curl.exe -X POST -d "original_url=https://www.youtube.com/watch?v=z_xYyWCjogM" http://127.0.0.1:5000/shorten
+# http://127.0.0.1:5000
